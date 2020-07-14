@@ -1,0 +1,94 @@
+/*
+ * Copyright 2012=2015 Freescale Semiconductor, Inc.
+ * Copyright 2011 Linaro Ltd.
+ *
+ * The code contained herein is licensed under the GNU General Public
+ * License. You may obtain a copy of the GNU General Public License
+ * Version 2 or later at the following locations:
+ *
+ * http://www.opensource.org/licenses/gpl-license.html
+ * http://www.gnu.org/copyleft/gpl.html
+ */
+
+/dts-v1/;
+
+#include "imx6q-sabresd-hytruck.dtsi"
+
+/ {
+	user_config{
+		display{
+				//lcd name list in cqsound_display_serialize.c
+				lcd_name = "sv63-10inch";	//ldb_split_8onch 1280x720	
+		};	
+		video{};
+		audio{};
+		touch{};
+	};
+};
+
+
+
+&i2c3 {
+
+	screen_mcu@6b {
+		compatible = "cqsound,screen_mcu";
+		reg = <0x6b>;
+	};
+
+
+		   synaptics_dsx@20 {  
+						compatible = "synaptics,dsx-i2c";
+						reg = <0x20>;
+						interrupt-parent = <&gpio7>;
+						interrupts = <11 0x2008>;
+						//vdd-supply = <&pm8994_lvs2>;
+						//avdd-supply = <&pm8994_l22>;
+						pinctrl-names = "pmx_ts_active", "pmx_ts_suspend";
+						//pinctrl-0 = <&ts_active>;
+						//pinctrl-1 = <&ts_suspend>;
+						synaptics,pwr-reg-name = "avdd";
+						synaptics,bus-reg-name = "vdd";
+						synaptics,ub-i2c-addr = <0x2c>;
+						synaptics,irq-gpio = <&gpio7 11 0x2008>; /* IRQF_ONESHOT | IRQF_TRIGGER_LOW */
+						synaptics,irq-on-state = <0>;
+						synaptics,power-delay-ms = <200>;
+						synaptics,reset-delay-ms = <200>;
+						synaptics,reset-on-state = <0>;
+						synaptics,reset-active-ms = <20>;
+						/* uncomment and update line below as appropriate if there are 0D buttons */
+						/* synaptics,cap-button-codes = <102 158>; */
+						/* uncomment and update lines below as appropriate if there are virtual buttons */
+						/* synaptics,vir-button-codes = <102 100 900 100 60 158 300 900 100 60>; */
+						/* synaptics,max-y-for-2d = <800>; */
+			   };
+
+};
+
+//for ev31 screen 	lvds:4lane-data, 1lane-clk
+
+&ldb {
+	status = "okay";
+	lvds-channel@0 {
+		primary;	
+		//fsl,data-mapping = "jeida";
+		fsl,data-mapping = "jeida";
+		fsl,data-width = <24>;
+		status = "okay";
+		display-timings {
+			native-mode = <&timing0>;
+			timing0: hytruck10p25 {
+				clock-frequency = <58100000>;//type val:58.1Mhz
+				hactive = <1280>;
+				vactive = <720>;
+				hback-porch = <42>;
+				vback-porch = <13>;
+				hfront-porch = <210>;/////not found val
+				vfront-porch = <22>;
+				hsync-len = <20>;
+				vsync-len = <14>;
+			};
+		};
+	};
+};
+
+
