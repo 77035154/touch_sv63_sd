@@ -828,6 +828,64 @@ static struct synaptics_rmi4_fwu_handle *fwu;
 DECLARE_COMPLETION(fwu_remove_complete);
 
 DEFINE_MUTEX(fwu_sysfs_mutex);
+
+
+
+ //fanxiaobo added in order to get the firmware id as touch version
+ static char *  touch_config_id = NULL;
+ static struct kobject * id_kobj = NULL;
+ 
+ static ssize_t id_show(struct kobject *kobj, struct kobj_attribute *attr,
+                          char* buf, size_t count)
+ {
+         if(touch_config_id == NULL) //if did not get the config_ui ID 
+         return 0;
+         int i;
+         for(i=0; i< strlen(touch_config_id); i++)
+         {
+                 buf[i] = touch_config_id[i];
+                 printk("%x", buf[i]);
+         }
+         printk("\n");
+ 
+         return i+1;
+ }
+ 
+ static struct kobj_attribute id_att = {
+         .attr = {
+                 .name = "touch_config_id",
+                 .mode = (S_IRUGO | S_IWUSR),
+         },
+         .show = id_show,
+         .store = NULL,
+ };
+
+static int get_touch_config_id_init(void)
+ {
+         int retval;
+         id_kobj = kobject_create_and_add("touch_config_id", kernel_kobj);
+         if(!id_kobj)
+                 return -ENOMEM;
+ 
+         retval = sysfs_create_file(id_kobj,&id_att);
+ 
+         if(retval)
+                 kobject_put(id_kobj);
+ 
+         return retval;
+ }
+ 
+ static void get_touch_config_id_exit(void)
+ {
+         sysfs_remove_file(id_kobj,&id_att);
+ 
+         kobject_put(id_kobj);
+ }
+
+
+
+
+
  
 /* Check offset + size <= bound.  true if in bounds, false otherwise. */
 static bool in_bounds(unsigned long offset, unsigned long size,
@@ -2839,6 +2897,7 @@ static int fwu_get_device_config_id(void)
 				fwu->f34_fd.ctrl_base_addr,
 				fwu->config_id,
 				config_id_size);
+	touch_config_id  = fwu->config_id;
 	if (retval < 0)
 		return retval;
 
@@ -5932,6 +5991,7 @@ static struct synaptics_rmi4_exp_fn fwu_module = {
 
 static int __init rmi4_fw_update_module_init(void)
 {
+	get_touch_config_id_init(); //fanxiaobo
 	synaptics_rmi4_new_function(&fwu_module, true);
 
 	return 0;
@@ -5939,6 +5999,7 @@ static int __init rmi4_fw_update_module_init(void)
 
 static void __exit rmi4_fw_update_module_exit(void)
 {
+	get_touch_config_id_exit();
 	synaptics_rmi4_new_function(&fwu_module, false);
 
 	wait_for_completion(&fwu_remove_complete);
